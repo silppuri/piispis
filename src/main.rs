@@ -2,12 +2,11 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 use web_sys;
 use rand::{thread_rng, Rng};
-use std::thread;
 
 const CANVAS_WIDTH: i32 = 800;
 const CANVAS_HEIGHT: i32 = 600;
-const PIISPIS_WIDTH: i32 = 80;
-const PIISPIS_HEIGHT: i32 = 80;
+const PIISPIS_WIDTH: i32 = 58;
+const PIISPIS_HEIGHT: i32 = 37;
 
 const ANIM_DELAY: f64 = 0.016; // 16 FPS
 
