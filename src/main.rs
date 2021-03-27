@@ -3,9 +3,8 @@ use wasm_bindgen::prelude::*;
 use web_sys;
 use rand::{thread_rng, Rng};
 use std::thread;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
-const CANVAS_WIDTH: i32 = 800;
-const CANVAS_HEIGHT: i32 = 600;
 const PIISPIS_WIDTH: i32 = 58;
 const PIISPIS_HEIGHT: i32 = 37;
 
@@ -20,10 +19,93 @@ macro_rules! console_log {
     ($($t:tt)*) => (web_sys::console::log_1(&JsValue::from(format_args!($($t)*).to_string())))
 }
 
+// Entity
+static ENTITY_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug)]
+struct Entity(usize);
+
+impl Entity {
+    fn new() -> Self {
+        Entity(ENTITY_COUNTER.fetch_add(1, Ordering::SeqCst))
+    }
+}
+
+// Components
+struct Components<T> {
+    components: Vec<T>
+}
+
+struct EntityComponents<'d, T> {
+    entity: Entity,
+    data: &'d mut Components<T>
+}
+
+impl<'d, T> EntityComponents<'d, T> {
+    pub fn add(mut self, value: T) -> EntityComponents<'d, T> {
+        let entity = Entity::new();
+        self.data.components.push(value);
+        self
+    }
+}
+
+impl<T> Components<T> {
+    pub fn new() -> Self {
+        Components {
+            components: Vec::new()
+        }
+    }
+
+    pub fn add(&mut self) -> EntityComponents<T> {
+        EntityComponents { entity: Entity::new(), data: self}
+    }
+}
+
+
+struct Velocity(f64);
+struct Acceleration(f64);
+
+struct Position {
+    x: i32,
+    y: i32
+}
+
 struct Arena {
     width: f64,
     height: f64,
 }
+
+struct Piispis {
+    html: Option<web_sys::HtmlElement>
+}
+
+// Systems
+pub trait System: Send {
+    fn process(&mut self);
+}
+
+struct World {
+    systems: Vec<Box<System>>
+}
+
+impl World {
+    pub fn new() -> Self {
+        World {
+            systems: Vec::new()
+        }
+    }
+
+    pub fn add_system<S: System + 'static>(&mut self, system: S) {
+        self.systems.push(Box::new(system));
+    }
+
+    pub fn update(&mut self) {
+        for system in self.systems {
+            system.process();
+        }
+    }
+}
+
 
 impl Arena {
     pub fn new(height: f64, width: f64) {
@@ -63,15 +145,6 @@ pub fn main() -> Result<(), JsValue> {
     Ok(())
 }
 
-
-struct Piispis {
-    pos_x: i32,
-    pos_y: i32,
-    vel_x: i32,
-    vel_y: i32,
-
-    html: Option<web_sys::HtmlElement>
-}
 impl Piispis {
     pub fn new(px: i32, py: i32) {
         let window = web_sys::window().unwrap();
