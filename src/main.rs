@@ -1,7 +1,8 @@
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen::prelude::*;
 use web_sys;
 use rand::{thread_rng, Rng};
+use std::thread;
 
 const CANVAS_WIDTH: i32 = 800;
 const CANVAS_HEIGHT: i32 = 600;
@@ -15,6 +16,54 @@ const INITIAL_VELOCITY_Y: i32 = 15;
 
 const ACCELERATION_Y: i32 = -1;
 
+macro_rules! console_log {
+    ($($t:tt)*) => (web_sys::console::log_1(&JsValue::from(format_args!($($t)*).to_string())))
+}
+
+struct Arena {
+    width: f64,
+    height: f64,
+}
+
+impl Arena {
+    pub fn new(height: f64, width: f64) {
+        let mut arena = Arena {
+            height: height,
+            width: width,
+        };
+        let callback = Closure::wrap(Box::new(move || {
+            arena.update();
+        }) as Box<dyn FnMut()>);
+
+        web_sys::window().unwrap().set_onresize(
+            Some(callback.as_ref().unchecked_ref())
+        );
+        callback.forget();
+    }
+    pub fn update(self: &mut Arena) {
+        let window = web_sys::window().unwrap();
+        self.width = window.inner_width().unwrap().as_f64().unwrap();
+        self.height = window.inner_height().unwrap().as_f64().unwrap();
+    }
+}
+
+#[wasm_bindgen]
+pub fn main() -> Result<(), JsValue> {
+    let window = web_sys::window().unwrap();
+    let document = window.document().unwrap();
+    let body = document.body().unwrap();
+    let arena_html = document.create_element("div").unwrap();
+    arena_html.set_attribute("class", "arena").unwrap();
+    body.append_child(&arena_html).unwrap();
+
+    let inner_width = window.inner_width().unwrap().as_f64().unwrap();
+    let inner_height = window.inner_height().unwrap().as_f64().unwrap();
+    Arena::new(inner_width, inner_height);
+
+    Ok(())
+}
+
+
 struct Piispis {
     pos_x: i32,
     pos_y: i32,
@@ -23,17 +72,8 @@ struct Piispis {
 
     html: Option<web_sys::HtmlElement>
 }
-
-macro_rules! console_log {
-    ($($t:tt)*) => (web_sys::console::log_1(&JsValue::from(format_args!($($t)*).to_string())))
-}
-
 impl Piispis {
     pub fn new(px: i32, py: i32) {
-        if !Piispis::is_in_canvas(px, py) {
-            return;
-        }
-
         let window = web_sys::window().unwrap();
         let document = window.document().unwrap();
 
@@ -107,32 +147,4 @@ impl Piispis {
             &format!("{:}px", self.pos_x-PIISPIS_WIDTH/2),
         ).unwrap();
     }
-}
-
-#[wasm_bindgen]
-pub fn main() -> Result<(), JsValue> {
-    let document = web_sys::window().unwrap().document().unwrap();
-    let body = document.body().unwrap();
-
-    let canvas = document.create_element("div").unwrap();
-    canvas.set_id("canvas");
-    body.append_child(&canvas).unwrap();
-
-    let callback = Closure::wrap(Box::new(|event: web_sys::MouseEvent| {
-
-        for _n in 0..5 {
-            Piispis::new(
-                event.offset_x(),
-                CANVAS_HEIGHT-event.offset_y(),
-            );
-        }
-    }) as Box<dyn Fn(_)>);
-
-    canvas.add_event_listener_with_callback(
-        "mouseup",
-        callback.as_ref().unchecked_ref(),
-    ).unwrap();
-
-    callback.forget();
-    Ok(())
 }

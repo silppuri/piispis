@@ -23,4 +23,5 @@ features = [
     'CssStyleDeclaration',
     'MouseEvent',
     'console',
+    'EventTarget',
 ]
