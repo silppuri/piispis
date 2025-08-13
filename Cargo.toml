@@ -2,18 +2,17 @@
 name = "piispis"
 version = "0.1.0"
 authors = ["Petri Avikainen <petri.avikainen@gmail.com>"]
-edition = "2018"
 
 [lib]
 crate-type = ["cdylib"]
 path = "src/main.rs"
 
 [dependencies]
-wasm-bindgen = "0.2.72"
+wasm-bindgen = "0.2.100"
 rand = { version = "0.6.5", features = ["wasm-bindgen"] }
 
 [dependencies.web-sys]
-version = "0.3.49"
+version = "0.3.77"
 features = [
     'Document',
     'Element',
