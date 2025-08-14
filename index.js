@@ -1,7 +1,6 @@
-import("./pkg").then((wasm) => {
-  console.log("Available exports:", Object.keys(wasm));
-  console.log("main function:", typeof wasm.main);
-  if (typeof wasm.main === "function") {
-    wasm.main();
-  }
-});
+// Note that a dynamic `import` statement here is required due to
+// webpack/webpack#6615, but in theory `import { greet } from './pkg';`
+// will work here one day as well!
+const rust = import("./pkg");
+
+rust.then((m) => m.main()).catch(console.error);
