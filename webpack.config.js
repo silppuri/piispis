@@ -15,16 +15,13 @@ module.exports = {
       template: "index.html",
     }),
     new WasmPackPlugin({
-      crateDirectory: path.resolve(__dirname, "."),
+      crateDirectory: __dirname,
     }),
     new CopyPlugin({
       patterns: [{ from: "static" }],
     }),
   ],
   mode: "development",
-  devServer: {
-    host: "0.0.0.0",
-  },
   experiments: {
     asyncWebAssembly: true,
   },
