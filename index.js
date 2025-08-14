@@ -1,3 +1,7 @@
-import { main } from "./pkg";
+// index.js
+async function init() {
+  const wasm = await import("./pkg");
+  wasm.main();
+}
 
-main();
+init();
