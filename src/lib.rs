@@ -1,11 +1,17 @@
 use rand::{Rng, thread_rng};
+use std::cell::Cell;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::*;
 use web_sys;
 
-const CANVAS_HEIGHT: i32 = 600;
+thread_local! {
+    // Set once in setup_canvas() to the canvas element's actual rendered height,
+    // since that varies with viewport size (e.g. filling the screen on mobile).
+    static CANVAS_HEIGHT: Cell<i32> = Cell::new(0);
+}
+
 const PIISPIS_WIDTH: i32 = 58;
 const PIISPIS_HEIGHT: i32 = 37;
 
@@ -152,7 +158,7 @@ impl Piispis {
     fn update_dom_position(&self, html_element: &web_sys::HtmlElement) -> Result<(), JsValue> {
         let style = html_element.style();
 
-        let top_px = (CANVAS_HEIGHT - self.position.y) - PIISPIS_HEIGHT / 2;
+        let top_px = (CANVAS_HEIGHT.with(Cell::get) - self.position.y) - PIISPIS_HEIGHT / 2;
         let left_px = self.position.x - PIISPIS_WIDTH / 2;
 
         style.set_property("top", &format!("{}px", top_px))?;
@@ -178,6 +184,8 @@ fn setup_canvas() -> Result<web_sys::Element, JsValue> {
     canvas.set_id("canvas");
     body.append_child(&canvas)?;
 
+    CANVAS_HEIGHT.with(|c| c.set(canvas.client_height()));
+
     Ok(canvas)
 }
 
@@ -194,7 +202,7 @@ fn setup_mouse_handler() -> Result<(), JsValue> {
     let callback = Closure::wrap(Box::new(|event: web_sys::MouseEvent| {
         let spawn_count = 5;
         let click_x = event.offset_x();
-        let click_y = CANVAS_HEIGHT - event.offset_y();
+        let click_y = CANVAS_HEIGHT.with(Cell::get) - event.offset_y();
 
         for _ in 0..spawn_count {
             if let Err(e) = Piispis::spawn(click_x, click_y) {

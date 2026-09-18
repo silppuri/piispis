@@ -3,13 +3,19 @@
     <head>
         <title>Piispis</title>
         <style>
+            body {
+                margin: 0;
+            }
+
             #canvas {
                 width: 800px;
                 height: 600px;
                 margin: auto;
                 position: relative;
+                box-sizing: border-box;
                 border: 1px solid black;
                 background-color: #ffffff;
+                touch-action: manipulation;
             }
 
             .piispis {
@@ -21,6 +27,13 @@
             }
             h1 {
                 text-align: center;
+            }
+
+            @media (max-width: 800px) {
+                #canvas {
+                    width: 100vw;
+                    height: calc(100vh - 60px);
+                }
             }
         </style>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
